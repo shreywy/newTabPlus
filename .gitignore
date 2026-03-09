@@ -3,4 +3,5 @@ node_modules
 Thumbs.db
 *.zip
 !newtab-plus.zip
+!firefox_v*_submission.zip
 old/

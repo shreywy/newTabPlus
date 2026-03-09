@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "newTab+",
-  "version": "2.2",
+  "version": "2.3",
   "description": "A beautiful glassmorphism new tab with quick links, weather, and a customizable tile grid",
   "permissions": [
     "storage",
@@ -10,6 +10,10 @@
   ],
   "icons": {
     "48": "icon.png"
+  },
+  "background": {
+    "scripts": ["background.js"],
+    "persistent": false
   },
   "chrome_url_overrides": {
     "newtab": "index.html"
