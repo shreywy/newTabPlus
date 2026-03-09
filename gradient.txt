@@ -1,0 +1,25 @@
+linear-gradient(135deg, #242635 0%, #0a0b10 100%)
+
+
+
+Top/Left Edge Bright (Original Request)
+
+linear-gradient(135deg, #242635 0%, #0a0b10 100%)
+linear-gradient(160deg, #242635 0%, #0a0b10 70%)
+linear-gradient(110deg, #242635 0%, #0a0b10 70%)
+radial-gradient(circle at top left, #242635 0%, #0a0b10 80%)
+radial-gradient(ellipse at 0% 0%, #242635 0%, #0a0b10 100%)
+
+Inverted (Darker on Top/Left, Brighter on Bottom/Right)
+
+linear-gradient(135deg, #0a0b10 0%, #242635 100%)
+linear-gradient(315deg, #242635 0%, #0a0b10 100%)
+linear-gradient(to top right, #0a0b10 0%, #242635 100%)
+radial-gradient(circle at bottom right, #242635 0%, #0a0b10 80%)
+radial-gradient(circle at top left, #0a0b10 0%, #242635 100%)
+
+High Contrast / Specialized
+
+linear-gradient(135deg, #242635 0%, #242635 20%, #0a0b10 100%)
+linear-gradient(135deg, #0a0b10 0%, #0a0b10 20%, #242635 100%)
+radial-gradient(farthest-corner at 0% 0%, #242635 0%, #0a0b10 100%)
