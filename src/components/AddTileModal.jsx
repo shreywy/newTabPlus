@@ -17,10 +17,10 @@ const BRAND_COLORS = {
   'apple.com': '#555555', 'steam.com': '#1b2838',
 };
 
-// RGB order: red → orange → yellow → green → cyan → blue → indigo → violet → pink
+// RGB order: red → orange → yellow → green → cyan → blue → violet → pink
 const COLOR_PRESETS = [
   '#EF4444', '#F97316', '#EAB308', '#22C55E',
-  '#06B6D4', '#3B82F6', '#6366F1', '#8B5CF6', '#EC4899',
+  '#06B6D4', '#3B82F6', '#8B5CF6', '#EC4899',
 ];
 
 function getDomain(url) {
@@ -44,6 +44,7 @@ export default function AddTileModal({ tile, onSave, onDelete, onClose }) {
   const [shortcut, setShortcut] = useState(tile?.shortcut ?? '');
   const [imgError, setImgError] = useState(false);
   const [suggestedColor, setSuggestedColor] = useState(null);
+  const [saving, setSaving] = useState(false);
 
   // Auto-detect domain when URL changes
   useEffect(() => {
@@ -74,17 +75,40 @@ export default function AddTileModal({ tile, onSave, onDelete, onClose }) {
     }
   }, [iconMode]);
 
-  const handleSave = useCallback(() => {
+  const handleSave = useCallback(async () => {
     const trimName = name.trim();
     let trimUrl = url.trim();
     if (!trimName || !trimUrl) return;
     if (!/^https?:\/\//i.test(trimUrl)) trimUrl = 'https://' + trimUrl;
+
+    let resolvedIconUrl = iconMode === 'auto' ? iconUrl : '';
+
+    // Cache favicon as base64 data URL so it works offline / avoids fetch failures
+    if (iconMode === 'auto' && iconUrl && !iconUrl.startsWith('data:')) {
+      setSaving(true);
+      try {
+        const res = await fetch(iconUrl, { mode: 'cors' });
+        if (res.ok) {
+          const blob = await res.blob();
+          resolvedIconUrl = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.onerror = () => resolve(iconUrl);
+            reader.readAsDataURL(blob);
+          });
+        }
+      } catch {
+        // fallback to remote URL
+      }
+      setSaving(false);
+    }
+
     onSave({
       id: tile?.id ?? null,
       name: trimName,
       url: trimUrl,
       icon: iconMode === 'emoji' ? icon.trim() : '',
-      iconUrl: iconMode === 'auto' ? iconUrl : '',
+      iconUrl: resolvedIconUrl,
       color,
       shortcut: shortcut.trim().charAt(0).toLowerCase() || '',
     });
@@ -245,9 +269,9 @@ export default function AddTileModal({ tile, onSave, onDelete, onClose }) {
         {/* Action buttons */}
         <div className="flex items-center justify-between mt-6">
           <div className="flex items-center gap-2">
-            <button onClick={handleSave} disabled={!name.trim() || !url.trim()}
+            <button onClick={handleSave} disabled={!name.trim() || !url.trim() || saving}
               className="px-4 py-2 bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium rounded-xl cursor-pointer transition-all">
-              Save
+              {saving ? 'Saving...' : 'Save'}
             </button>
             <button onClick={onClose} className="px-4 py-2 text-white/50 hover:text-white/70 text-sm rounded-xl cursor-pointer transition-colors">
               Cancel
