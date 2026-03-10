@@ -61,6 +61,9 @@ const DEFAULT_SETTINGS = {
     tiles: '',
     shortcuts: '',
   },
+  search: {
+    suggestions: true,
+  },
 };
 
 async function loadFromStorage(storage, key) {
@@ -102,6 +105,7 @@ export default function App() {
   const [modalState, setModalState] = useState({ open: false, tile: null });
   const [loaded, setLoaded] = useState(false);
   const [showFab, setShowFab] = useState(false);
+  const [hasQuery, setHasQuery] = useState(false);
   const storage = getStorage();
 
   // Load state from storage on mount
@@ -245,7 +249,7 @@ export default function App() {
     return () => { window.removeEventListener('keydown', onDown); window.removeEventListener('keyup', onUp); };
   }, [tiles]);
 
-  const { background, shader, tiles: tileSettings } = appSettings;
+  const { background, shader, tiles: tileSettings, search: searchSettings = {} } = appSettings;
 
   // Don't render until storage is loaded — prevents flash of default settings
   if (!loaded) return <div className="w-full h-screen" style={{ background: '#020617' }} />;
@@ -298,12 +302,20 @@ export default function App() {
 
         <div
           className="mt-8 w-full px-6"
-          style={{ maxWidth: '560px' }}
+          style={{ maxWidth: '560px', zIndex: 20, position: 'relative' }}
         >
-          <SearchBar />
+          <SearchBar
+            showSuggestions={searchSettings.suggestions ?? true}
+            onHasQuery={setHasQuery}
+          />
         </div>
 
-        <div className="mt-8 w-full px-6">
+        <motion.div
+          className="mt-8 w-full px-6"
+          animate={{ opacity: hasQuery ? 0 : 1 }}
+          transition={{ duration: 0.18 }}
+          style={{ pointerEvents: hasQuery ? 'none' : 'auto' }}
+        >
           <TileGrid
             tiles={tiles}
             editMode={editMode}
@@ -319,7 +331,7 @@ export default function App() {
             shortcutColor={tileSettings.shortcutColor}
             hoverShadow={tileSettings.hoverShadow}
           />
-        </div>
+        </motion.div>
       </div>
 
       {/* ── FAB ── */}

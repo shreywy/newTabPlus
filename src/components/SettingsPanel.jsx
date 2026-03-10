@@ -244,7 +244,7 @@ function PresetDropdown({ onSelect }) {
 }
 
 export default function SettingsPanel({ settings, onClose, onUpdateSettings, tiles, onImportTiles, onImport, onDone }) {
-  const { background, shader, tiles: tileSettings, fonts: fontSettings = {} } = settings;
+  const { background, shader, tiles: tileSettings, fonts: fontSettings = {}, search: searchSettings = {} } = settings;
   const set = (path, val) => onUpdateSettings(path, val);
   const importRef = useRef(null);
   const [importModal, setImportModal] = useState(null); // { parsed, hasLinks, hasSettings }
@@ -269,6 +269,7 @@ export default function SettingsPanel({ settings, onClose, onUpdateSettings, til
         shader: settings.shader,
         tiles: settings.tiles,
         fonts: settings.fonts,
+        search: settings.search,
       },
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -471,6 +472,14 @@ export default function SettingsPanel({ settings, onClose, onUpdateSettings, til
           <FontSelect label="Tile Names" value={fontSettings.tiles ?? ''} onChange={v => set('fonts.tiles', v)} />
           <FontSelect label="Shortcuts" value={fontSettings.shortcuts ?? ''} onChange={v => set('fonts.shortcuts', v)} />
           <p className="text-[10px] text-white/25">Individual overrides Global. Default = system font.</p>
+        </section>
+
+        <SectionDivider />
+
+        {/* ── SEARCH ── */}
+        <section className="space-y-3">
+          <h3 className={c.section}>Search</h3>
+          <Toggle label="Show Suggestions" value={searchSettings.suggestions ?? true} onChange={v => set('search.suggestions', v)} />
         </section>
 
         <SectionDivider />
