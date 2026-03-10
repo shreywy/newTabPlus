@@ -60,6 +60,7 @@ const DEFAULT_SETTINGS = {
     search: '',
     tiles: '',
     shortcuts: '',
+    custom: [],       // user-added Google Font names
   },
   clock: {
     hour12: true,
@@ -152,8 +153,11 @@ export default function App() {
       else root.style.removeProperty(k);
     }
     // Dynamically inject Google Fonts link for any selected fonts
-    const MONO = new Set(['JetBrains Mono', 'Fira Code', 'Space Mono', 'IBM Plex Mono', 'Geist Mono']);
-    const used = [...new Set(Object.values(f).filter(Boolean))];
+    const MONO = new Set(['JetBrains Mono', 'Fira Code', 'Space Mono', 'IBM Plex Mono', 'Geist Mono', 'Inconsolata', 'Source Code Pro']);
+    const SYS = new Set(['', 'Times New Roman', 'Georgia', 'Arial', 'Courier New']);
+    const fontVals = Object.entries(f).filter(([k]) => k !== 'custom').map(([, v]) => v);
+    const customVals = Array.isArray(f.custom) ? f.custom : [];
+    const used = [...new Set([...fontVals, ...customVals].filter(v => v && !SYS.has(v)))];
     if (used.length === 0) { document.getElementById('ntplus-gfonts')?.remove(); return; }
     const families = used.map(font => {
       const wgts = MONO.has(font) ? '400;500' : '300;400;500;600';
@@ -231,6 +235,7 @@ export default function App() {
 
   // Tile keyboard shortcuts — hold to preview, release to navigate
   const [heldShortcut, setHeldShortcut] = useState(null);
+  const cancelShortcut = useRef(false); // set when another key is pressed during hold
 
   useEffect(() => {
     const onDown = (e) => {
@@ -238,15 +243,23 @@ export default function App() {
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
       if (e.metaKey || e.ctrlKey || e.altKey || e.repeat) return;
       const key = e.key.toLowerCase();
+      // If already holding a shortcut and a different key is pressed, cancel
+      setHeldShortcut(prev => {
+        if (prev !== null && prev !== key) { cancelShortcut.current = true; return null; }
+        return prev;
+      });
       const match = tiles.find(t => t.shortcut && t.shortcut.toLowerCase() === key);
-      if (match) { e.preventDefault(); setHeldShortcut(key); }
+      if (match) { e.preventDefault(); cancelShortcut.current = false; setHeldShortcut(key); }
     };
     const onUp = (e) => {
       const key = e.key.toLowerCase();
       setHeldShortcut(prev => {
         if (prev === key) {
-          const match = tiles.find(t => t.shortcut && t.shortcut.toLowerCase() === key);
-          if (match) window.location.href = match.url;
+          if (!cancelShortcut.current) {
+            const match = tiles.find(t => t.shortcut && t.shortcut.toLowerCase() === key);
+            if (match) window.location.href = match.url;
+          }
+          cancelShortcut.current = false;
           return null;
         }
         return prev;

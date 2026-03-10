@@ -53,8 +53,43 @@ const GRADIENT_PRESETS = [
 ];
 // ──────────────────────────────────────────────────────────────────────────
 
-const SANS_FONTS = ['Inter', 'DM Sans', 'Geist', 'Outfit', 'Onest', 'Figtree', 'Plus Jakarta Sans', 'Space Grotesk', 'Nunito', 'Poppins', 'Raleway', 'Sora'];
-const MONO_FONTS = ['JetBrains Mono', 'Fira Code', 'Space Mono', 'IBM Plex Mono'];
+const FONT_GROUPS = [
+  {
+    group: 'System',
+    fonts: [
+      { name: 'Default',          value: '',               family: 'system-ui, sans-serif', system: true },
+      { name: 'Times New Roman',  value: 'Times New Roman',family: '"Times New Roman", serif', system: true },
+      { name: 'Georgia',          value: 'Georgia',        family: 'Georgia, serif', system: true },
+      { name: 'Arial',            value: 'Arial',          family: 'Arial, sans-serif', system: true },
+      { name: 'Courier New',      value: 'Courier New',    family: '"Courier New", monospace', system: true },
+    ],
+  },
+  {
+    group: 'Sans-serif',
+    fonts: ['Inter','DM Sans','Geist','Outfit','Onest','Figtree','Plus Jakarta Sans',
+            'Space Grotesk','Nunito','Poppins','Raleway','Sora','Lato','Open Sans',
+            'Roboto','Urbanist','Manrope','Source Sans 3'].map(n => ({ name: n, value: n })),
+  },
+  {
+    group: 'Serif',
+    fonts: ['Playfair Display','Merriweather','Lora','EB Garamond',
+            'DM Serif Display','Cormorant Garamond'].map(n => ({ name: n, value: n })),
+  },
+  {
+    group: 'Monospace',
+    fonts: ['JetBrains Mono','Fira Code','Space Mono','IBM Plex Mono',
+            'Geist Mono','Inconsolata','Source Code Pro'].map(n => ({ name: n, value: n })),
+  },
+];
+
+const ALL_GOOGLE_FONTS = FONT_GROUPS.slice(1).flatMap(g => g.fonts.map(f => f.value));
+
+function getFontFamily(value) {
+  if (!value) return 'system-ui, sans-serif';
+  const sys = FONT_GROUPS[0].fonts.find(f => f.value === value);
+  if (sys) return sys.family;
+  return `'${value}', system-ui, sans-serif`;
+}
 
 const c = {
   label: 'text-xs text-white/50 font-medium',
@@ -122,34 +157,196 @@ function Toggle({ label, value, onChange }) {
   );
 }
 
-function FontSelect({ label, value, onChange }) {
+function FontDropdown({ label, value, onChange, extraFonts = [] }) {
+  const [open, setOpen] = useState(false);
+  const triggerRef = useRef(null);
+  const [dropPos, setDropPos] = useState(null);
+
+  const selectedFamily = getFontFamily(value);
+  const selectedName = value
+    ? (FONT_GROUPS.flatMap(g => g.fonts).find(f => f.value === value)?.name ?? value)
+    : 'Default';
+
+  const openDropdown = () => {
+    const rect = triggerRef.current?.getBoundingClientRect();
+    if (rect) {
+      setDropPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+    }
+    setOpen(true);
+  };
+
+  useEffect(() => {
+    if (!open) return;
+    const close = (e) => { if (!triggerRef.current?.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, [open]);
+
+  const groups = [
+    ...(extraFonts.length > 0 ? [{ group: 'Custom', fonts: extraFonts.map(n => ({ name: n, value: n })) }] : []),
+    ...FONT_GROUPS,
+  ];
+
   return (
     <div className={c.row}>
       <span className={c.label}>{label}</span>
-      <select
-        value={value}
-        onChange={e => onChange(e.target.value)}
-        className="text-xs rounded-lg px-2 py-1.5 outline-none cursor-pointer"
+      <button
+        ref={triggerRef}
+        onClick={open ? () => setOpen(false) : openDropdown}
+        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg cursor-pointer transition-colors"
         style={{
           background: 'rgba(255,255,255,0.07)',
           border: '1px solid rgba(255,255,255,0.12)',
-          color: 'rgba(255,255,255,0.80)',
-          fontFamily: value ? `'${value}', system-ui` : undefined,
-          maxWidth: '152px',
+          maxWidth: '160px',
         }}
       >
-        <option value="" style={{ background: '#0c0e1a', fontFamily: 'system-ui' }}>Default</option>
-        <optgroup label="Sans-serif" style={{ background: '#0c0e1a' }}>
-          {SANS_FONTS.map(f => (
-            <option key={f} value={f} style={{ background: '#0c0e1a' }}>{f}</option>
-          ))}
-        </optgroup>
-        <optgroup label="Monospace" style={{ background: '#0c0e1a' }}>
-          {MONO_FONTS.map(f => (
-            <option key={f} value={f} style={{ background: '#0c0e1a' }}>{f}</option>
-          ))}
-        </optgroup>
-      </select>
+        <span className="text-sm text-white/70 leading-none flex-shrink-0" style={{ fontFamily: selectedFamily }}>Aa</span>
+        <span className="text-xs text-white/70 truncate flex-1 text-left">{selectedName}</span>
+        <ChevronDown className={`w-3 h-3 text-white/30 flex-shrink-0 transition-transform duration-150 ${open ? 'rotate-180' : ''}`} />
+      </button>
+
+      {createPortal(
+        <AnimatePresence>
+          {open && dropPos && (
+            <motion.div
+              initial={{ opacity: 0, y: -4, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -4, scale: 0.98 }}
+              transition={{ duration: 0.12 }}
+              style={{
+                position: 'fixed',
+                top: dropPos.top,
+                right: dropPos.right,
+                width: 220,
+                maxHeight: 320,
+                overflowY: 'auto',
+                zIndex: 9999,
+                background: 'rgba(8, 10, 22, 0.94)',
+                backdropFilter: 'blur(24px)',
+                border: '1px solid rgba(255,255,255,0.12)',
+                borderRadius: 12,
+                boxShadow: '0 8px 40px rgba(0,0,0,0.6)',
+              }}
+            >
+              {groups.map((group, gi) => (
+                <div key={group.group}>
+                  {gi > 0 && <div className="h-px mx-3" style={{ background: 'rgba(255,255,255,0.07)' }} />}
+                  <div className="px-3 pt-2.5 pb-1">
+                    <span className="text-[9px] font-semibold text-white/30 uppercase tracking-widest">{group.group}</span>
+                  </div>
+                  {group.fonts.map(font => (
+                    <button
+                      key={font.value}
+                      onClick={() => { onChange(font.value); setOpen(false); }}
+                      className="w-full flex items-center gap-2.5 px-3 py-1.5 text-left cursor-pointer transition-colors"
+                      style={{
+                        background: font.value === value ? 'rgba(255,255,255,0.09)' : 'transparent',
+                        color: font.value === value ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.60)',
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.background = font.value === value ? 'rgba(255,255,255,0.09)' : 'rgba(255,255,255,0.05)'}
+                      onMouseLeave={e => e.currentTarget.style.background = font.value === value ? 'rgba(255,255,255,0.09)' : 'transparent'}
+                    >
+                      <span className="text-base leading-none flex-shrink-0 w-8 text-center"
+                        style={{ fontFamily: font.family ?? getFontFamily(font.value) }}>
+                        Aa
+                      </span>
+                      <span className="text-xs truncate">{font.name}</span>
+                    </button>
+                  ))}
+                  <div className="h-1" />
+                </div>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
+    </div>
+  );
+}
+
+function FontsSection({ fontSettings, set }) {
+  const [customInput, setCustomInput] = useState('');
+  const customFonts = Array.isArray(fontSettings.custom) ? fontSettings.custom : [];
+
+  // Load all Google Fonts for previews when this section mounts
+  useEffect(() => {
+    const all = [...ALL_GOOGLE_FONTS, ...customFonts].filter(Boolean);
+    if (all.length === 0) return;
+    const families = all.map(f => `family=${f.replace(/ /g, '+')}:wght@400`).join('&');
+    const href = `https://fonts.googleapis.com/css2?${families}&display=swap`;
+    let link = document.getElementById('ntplus-font-preview');
+    if (!link) {
+      link = document.createElement('link');
+      link.id = 'ntplus-font-preview';
+      link.rel = 'stylesheet';
+      document.head.appendChild(link);
+    }
+    link.href = href;
+  }, [customFonts.length]);
+
+  const addCustomFont = () => {
+    const name = customInput.trim();
+    if (!name || customFonts.includes(name)) return;
+    set('fonts.custom', [...customFonts, name]);
+    setCustomInput('');
+  };
+
+  const removeCustomFont = (name) => {
+    set('fonts.custom', customFonts.filter(f => f !== name));
+  };
+
+  const FD = ({ label, fkey }) => (
+    <FontDropdown label={label} value={fontSettings[fkey] ?? ''} onChange={v => set(`fonts.${fkey}`, v)} extraFonts={customFonts} />
+  );
+
+  return (
+    <div className="space-y-3.5">
+      <FD label="Global" fkey="global" />
+      <div className="h-px -mx-1" style={{ background: 'rgba(255,255,255,0.05)' }} />
+      <FD label="Clock" fkey="time" />
+      <FD label="Date" fkey="date" />
+      <FD label="Greeting" fkey="greeting" />
+      <FD label="Search" fkey="search" />
+      <FD label="Tile Names" fkey="tiles" />
+      <FD label="Shortcuts" fkey="shortcuts" />
+      <p className="text-[10px] text-white/25">Individual overrides Global.</p>
+      {/* Custom font input */}
+      <div className="pt-1">
+        <p className="text-[10px] text-white/30 mb-1.5">Add Google Font</p>
+        <div className="flex gap-1.5">
+          <input
+            type="text"
+            value={customInput}
+            onChange={e => setCustomInput(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && addCustomFont()}
+            placeholder="e.g. Bricolage Grotesque"
+            className="flex-1 text-xs rounded-lg px-2.5 py-1.5 outline-none text-white placeholder-white/25"
+            style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.10)' }}
+          />
+          <button
+            onClick={addCustomFont}
+            className="px-2.5 py-1.5 rounded-lg text-xs text-white/70 hover:text-white cursor-pointer transition-colors"
+            style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.10)' }}
+          >
+            Add
+          </button>
+        </div>
+        {customFonts.length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-2">
+            {customFonts.map(f => (
+              <button key={f} onClick={() => removeCustomFont(f)}
+                className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] text-white/50 hover:text-white/80 cursor-pointer transition-colors"
+                style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.10)' }}
+                title="Remove"
+              >
+                <span style={{ fontFamily: getFontFamily(f) }}>{f}</span>
+                <X className="w-2.5 h-2.5" />
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -487,15 +684,7 @@ export default function SettingsPanel({ settings, onClose, onUpdateSettings, til
 
         {/* ── FONTS ── */}
         <Collapse title="Fonts">
-          <FontSelect label="Global" value={fontSettings.global ?? ''} onChange={v => set('fonts.global', v)} />
-          <div className="h-px -mx-1" style={{ background: 'rgba(255,255,255,0.05)' }} />
-          <FontSelect label="Clock" value={fontSettings.time ?? ''} onChange={v => set('fonts.time', v)} />
-          <FontSelect label="Date" value={fontSettings.date ?? ''} onChange={v => set('fonts.date', v)} />
-          <FontSelect label="Greeting" value={fontSettings.greeting ?? ''} onChange={v => set('fonts.greeting', v)} />
-          <FontSelect label="Search" value={fontSettings.search ?? ''} onChange={v => set('fonts.search', v)} />
-          <FontSelect label="Tile Names" value={fontSettings.tiles ?? ''} onChange={v => set('fonts.tiles', v)} />
-          <FontSelect label="Shortcuts" value={fontSettings.shortcuts ?? ''} onChange={v => set('fonts.shortcuts', v)} />
-          <p className="text-[10px] text-white/25">Individual overrides Global. Default = system font.</p>
+          <FontsSection fontSettings={fontSettings} set={set} />
         </Collapse>
 
         {/* ── SEARCH ── */}

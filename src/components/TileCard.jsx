@@ -123,8 +123,8 @@ export default function TileCard({ tile, editMode, onEdit, tileSize = 100, heldS
           {tile.name}
         </span>
 
-        {/* Shortcut badge — shown when showShortcuts is on or key is held */}
-        {tile.shortcut && (showShortcuts || isHeld) && (
+        {/* Shortcut badge — only shown when showShortcuts is enabled */}
+        {tile.shortcut && showShortcuts && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: isHeld ? 1 : 0.6 }}
