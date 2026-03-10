@@ -14,6 +14,7 @@ const BRAND_COLORS = {
   'amazon.com': '#FF9900', 'microsoft.com': '#0078D4', 'linkedin.com': '#0A66C2',
   'tiktok.com': '#FF0050', 'notion.so': '#37352f', 'figma.com': '#F24E1E',
   'vercel.com': '#000000', 'openai.com': '#10a37f', 'anthropic.com': '#C96A45',
+  'claude.ai': '#C96A45', 'chatgpt.com': '#10a37f',
   'apple.com': '#555555', 'steam.com': '#1b2838',
 };
 
@@ -86,19 +87,28 @@ export default function AddTileModal({ tile, onSave, onDelete, onClose }) {
     // Cache favicon as base64 data URL so it works offline / avoids fetch failures
     if (iconMode === 'auto' && iconUrl && !iconUrl.startsWith('data:')) {
       setSaving(true);
-      try {
-        const res = await fetch(iconUrl, { mode: 'cors' });
-        if (res.ok) {
+      const domain = getDomain(trimUrl);
+      const candidates = [
+        iconUrl,
+        domain ? `https://icons.duckduckgo.com/ip3/${domain}.ico` : null,
+        domain ? `https://favicone.com/${domain}?s=64` : null,
+      ].filter(Boolean);
+
+      for (const src of candidates) {
+        try {
+          const res = await fetch(src, { mode: 'cors' });
+          if (!res.ok) continue;
           const blob = await res.blob();
+          // Skip tiny responses — likely a blank/globe placeholder (<500 bytes)
+          if (blob.size < 500) continue;
           resolvedIconUrl = await new Promise((resolve) => {
             const reader = new FileReader();
             reader.onloadend = () => resolve(reader.result);
-            reader.onerror = () => resolve(iconUrl);
+            reader.onerror = () => resolve(src);
             reader.readAsDataURL(blob);
           });
-        }
-      } catch {
-        // fallback to remote URL
+          break;
+        } catch { continue; }
       }
       setSaving(false);
     }
