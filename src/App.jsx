@@ -246,16 +246,18 @@ export default function App() {
 
       {/* ── LAYER 4: Main content ── */}
       <div className="relative z-10 h-full flex flex-col items-center justify-center gap-0">
-        <div>
+        <motion.div layout transition={{ type: 'spring', stiffness: 300, damping: 30 }}>
           <Clock />
-        </div>
+        </motion.div>
 
-        <div
+        <motion.div
+          layout
+          transition={{ type: 'spring', stiffness: 300, damping: 30 }}
           className="mt-8 w-full px-6"
           style={{ maxWidth: '560px' }}
         >
           <SearchBar />
-        </div>
+        </motion.div>
 
         <div className="mt-8 w-full px-6">
           <TileGrid

@@ -100,7 +100,9 @@ export default function TileGrid({ tiles, editMode, onReorder, onAdd, onEdit, ti
                 width: 'fit-content',
               }}
             >
-              <div
+              <motion.div
+                layout
+                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                 style={{
                   display: 'grid',
                   gridTemplateColumns: `repeat(${effectiveCols}, ${tileSize}px)`,
@@ -145,7 +147,7 @@ export default function TileGrid({ tiles, editMode, onReorder, onAdd, onEdit, ti
                     <span className="text-xs font-medium">Add</span>
                   </motion.button>
                 )}
-              </div>
+              </motion.div>
             </div>
           </div>
         </div>
